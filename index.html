@@ -639,6 +639,10 @@
           <div class="result-label">P(A|B) point estimate</div>
           <div class="result-value" id="t3_r_pt">—</div>
         </div>
+        <div class="result-item highlight-green">
+          <div class="result-label">P(¬A|B) — point est.</div>
+          <div class="result-value" id="t3_r_pnab">—</div>
+        </div>
         <div class="result-item highlight-cyan">
           <div class="result-label">Posterior mean</div>
           <div class="result-value" id="t3_r_mean">—</div>
@@ -751,6 +755,10 @@
         <div class="result-item highlight">
           <div class="result-label">P(A|B) point estimate</div>
           <div class="result-value" id="t4_r_pt">—</div>
+        </div>
+        <div class="result-item highlight-green">
+          <div class="result-label">P(¬A|B) — point est.</div>
+          <div class="result-value" id="t4_r_pnab">—</div>
         </div>
         <div class="result-item highlight-cyan">
           <div class="result-label">Bootstrap mean</div>
@@ -1112,13 +1120,14 @@ function calcTab3() {
       document.getElementById('t3_r_pbna').textContent    = fmt6(pbna_pt);
       document.getElementById('t3_r_pb').textContent      = fmt6(pb_pt);
       document.getElementById('t3_r_pt').textContent      = fmt6(pt);
+      document.getElementById('t3_r_pnab').textContent    = fmt6(1 - pt);
       document.getElementById('t3_r_mean').textContent    = fmt6(mn);
       document.getElementById('t3_r_median').textContent  = fmt6(med);
       document.getElementById('t3_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
       document.getElementById('t3_r_panb').textContent    = fmt6(panb_pt);
       document.getElementById('t3_r_pnanb').textContent   = fmt6(pnanb_pt);
       document.getElementById('t3_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
-      _t3cache = { pba_pt, pbna_pt, pb_pt, pt, mn, med, lo, hi, panb_pt, pnanb_pt,
+      _t3cache = { pba_pt, pbna_pt, pb_pt, pt, pnab_pt: 1 - pt, mn, med, lo, hi, panb_pt, pnanb_pt,
                    pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
       drawCIbar('t3_ci_range', 't3_ci_point', lo, hi, pt);
       showResults('t3_results');
@@ -1185,12 +1194,13 @@ function calcTab4() {
       document.getElementById('t4_r_pbna').textContent    = fmt6(pbna_h);
       document.getElementById('t4_r_pb').textContent      = fmt6(pb_pt);
       document.getElementById('t4_r_pt').textContent      = fmt6(pt);
+      document.getElementById('t4_r_pnab').textContent    = fmt6(1 - pt);
       document.getElementById('t4_r_mean').textContent    = fmt6(mn);
       document.getElementById('t4_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
       document.getElementById('t4_r_panb').textContent    = fmt6(panb_pt);
       document.getElementById('t4_r_pnanb').textContent   = fmt6(pnanb_pt);
       document.getElementById('t4_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
-      _t4cache = { pba_h, pbna_h, pb_pt, pt, mn, lo, hi, panb_pt, pnanb_pt,
+      _t4cache = { pba_h, pbna_h, pb_pt, pt, pnab_pt: 1 - pt, mn, lo, hi, panb_pt, pnanb_pt,
                    pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
       drawCIbar('t4_ci_range', 't4_ci_point', lo, hi, pt);
       showResults('t4_results');
@@ -1334,6 +1344,7 @@ function saveTab3() {
     fmtMetric('P(B|not-A) observed',   fmt6(c.pbna_pt)),
     fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
     fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
+    fmtMetric('P(not-A|B) pt. est.',   fmt6(c.pnab_pt)),
     fmtMetric('Posterior mean',        fmt6(c.mn)),
     fmtMetric('Posterior median',      fmt6(c.med)),
     fmtMetric('95% Credible Interval', `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
@@ -1365,6 +1376,7 @@ function saveTab4() {
     fmtMetric('P(B|not-A) observed',   fmt6(c.pbna_h)),
     fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
     fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
+    fmtMetric('P(not-A|B) pt. est.',   fmt6(c.pnab_pt)),
     fmtMetric('Bootstrap mean',        fmt6(c.mn)),
     fmtMetric('95% Bootstrap CI',      `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
     fmtMetric('P(A|not-B) pt. est.',   fmt6(c.panb_pt)),
