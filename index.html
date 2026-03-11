@@ -330,6 +330,53 @@
     header h1 { font-size: 1.5rem; }
     .tabs { flex-direction: column; }
   }
+
+  /* ── Bayes Table ── */
+  .bayes-table-wrap {
+    grid-column: 1 / -1;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+  .bayes-table-title {
+    font-size: .75rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .4px; margin-bottom: .7rem;
+  }
+  .bayes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+  .bayes-table th {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    padding: .5rem .75rem;
+    text-align: center;
+  }
+  .bayes-table td {
+    padding: .5rem .75rem;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .bayes-table .row-header {
+    background: #eef2ff;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  .bayes-table .total-cell {
+    background: #ecfdf5;
+    font-weight: 700;
+    color: var(--emerald);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 540px) {
+    .bayes-table-wrap { grid-column: 1; }
+    .bayes-table { font-size: .72rem; }
+    .bayes-table th, .bayes-table td { padding: .35rem .4rem; }
+  }
 </style>
 </head>
 <body>
@@ -402,6 +449,20 @@
           <div class="result-value" id="t1_r_pnab">—</div>
           <div class="result-pct" id="t1_r_pnab_pct"></div>
         </div>
+        <div class="result-item highlight-amber">
+          <div class="result-label">P(A|¬B)</div>
+          <div class="result-value" id="t1_r_panb">—</div>
+          <div class="result-pct" id="t1_r_panb_pct"></div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">P(¬A|¬B)</div>
+          <div class="result-value" id="t1_r_pnanb">—</div>
+          <div class="result-pct" id="t1_r_pnanb_pct"></div>
+        </div>
+        <div class="bayes-table-wrap">
+          <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col)</div>
+          <div id="t1_bayes_table"></div>
+        </div>
         <div class="prob-bar-wrap result-item">
           <div class="prob-bar-label">P(A|B) visualised</div>
           <div class="prob-bar-track">
@@ -463,6 +524,20 @@
           <div class="result-label">P(¬A|B)</div>
           <div class="result-value" id="t2_r_pnab">—</div>
           <div class="result-pct" id="t2_r_pnab_pct"></div>
+        </div>
+        <div class="result-item highlight-amber">
+          <div class="result-label">P(A|¬B)</div>
+          <div class="result-value" id="t2_r_panb">—</div>
+          <div class="result-pct" id="t2_r_panb_pct"></div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">P(¬A|¬B)</div>
+          <div class="result-value" id="t2_r_pnanb">—</div>
+          <div class="result-pct" id="t2_r_pnanb_pct"></div>
+        </div>
+        <div class="bayes-table-wrap">
+          <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col)</div>
+          <div id="t2_bayes_table"></div>
         </div>
         <div class="prob-bar-wrap result-item">
           <div class="prob-bar-label">P(A|B) visualised</div>
@@ -564,6 +639,18 @@
           <div class="result-value" id="t3_r_ci">—</div>
           <div class="result-pct">There is a 95% probability that the true P(A|B) lies within this range.</div>
         </div>
+        <div class="result-item highlight-amber">
+          <div class="result-label">P(A|¬B) — point est.</div>
+          <div class="result-value" id="t3_r_panb">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">P(¬A|¬B) — point est.</div>
+          <div class="result-value" id="t3_r_pnanb">—</div>
+        </div>
+        <div class="bayes-table-wrap">
+          <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col) — point estimates</div>
+          <div id="t3_bayes_table"></div>
+        </div>
         <div class="prob-bar-wrap result-item">
           <div class="prob-bar-label">CI visualised (0 → 1)</div>
           <div class="prob-bar-track" style="height:14px">
@@ -659,6 +746,18 @@
           <div class="result-label">95% Bootstrap CI</div>
           <div class="result-value" id="t4_r_ci">—</div>
           <div class="result-pct">95% of such intervals from repeated experiments would contain the true P(A|B).</div>
+        </div>
+        <div class="result-item highlight-amber">
+          <div class="result-label">P(A|¬B) — point est.</div>
+          <div class="result-value" id="t4_r_panb">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">P(¬A|¬B) — point est.</div>
+          <div class="result-value" id="t4_r_pnanb">—</div>
+        </div>
+        <div class="bayes-table-wrap">
+          <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col) — point estimates</div>
+          <div id="t4_bayes_table"></div>
         </div>
         <div class="prob-bar-wrap result-item">
           <div class="prob-bar-label">CI visualised (0 → 1)</div>
@@ -810,6 +909,33 @@ function drawCIbar(rangeId, pointId, lower, upper, point) {
   dot.style.left    = (point * 100) + '%';
 }
 
+// ── Bayesian Probability Table builder ───────────────
+function buildBayesTable(pAB, pAnB, pA, pnAB, pnAnB, pnA, pB, pnB) {
+  return `<table class="bayes-table">
+    <thead><tr>
+      <th></th><th>B</th><th>¬B</th><th class="total-cell">P(row)</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="row-header">A</td>
+        <td>${fmt6(pAB)}</td><td>${fmt6(pAnB)}</td>
+        <td class="total-cell">${fmt6(pA)}</td>
+      </tr>
+      <tr>
+        <td class="row-header">¬A</td>
+        <td>${fmt6(pnAB)}</td><td>${fmt6(pnAnB)}</td>
+        <td class="total-cell">${fmt6(pnA)}</td>
+      </tr>
+      <tr>
+        <td class="row-header total-cell">P(col)</td>
+        <td class="total-cell">${fmt6(pB)}</td>
+        <td class="total-cell">${fmt6(pnB)}</td>
+        <td class="total-cell">1.000000</td>
+      </tr>
+    </tbody>
+  </table>`;
+}
+
 // ── Spinner helpers ───────────────────────────────────
 function startSpinner(btnId, spinId) {
   document.getElementById(btnId).disabled = true;
@@ -838,14 +964,26 @@ function calcTab1() {
     const pb    = pba * pa + pbna * pnota;
     if (pb === 0) throw new Error('P(B) = 0 — calculation not possible.');
 
-    const pab  = (pba * pa) / pb;
-    const pnab = 1 - pab;
+    const pab   = (pba * pa) / pb;
+    const pnab  = 1 - pab;
+    const pnotb = 1 - pb;
+    const panb  = pnotb > 0 ? ((1 - pba) * pa) / pnotb : 0;
+    const pnanb = 1 - panb;
+    const pAB   = pba  * pa;
+    const pAnB  = (1 - pba)  * pa;
+    const pnAB  = pbna * pnota;
+    const pnAnB = (1 - pbna) * pnota;
 
-    document.getElementById('t1_r_pb').textContent   = fmt6(pb);
-    document.getElementById('t1_r_pab').textContent  = fmt6(pab);
-    document.getElementById('t1_r_pab_pct').textContent = fmtP(pab);
-    document.getElementById('t1_r_pnab').textContent = fmt6(pnab);
-    document.getElementById('t1_r_pnab_pct').textContent = fmtP(pnab);
+    document.getElementById('t1_r_pb').textContent        = fmt6(pb);
+    document.getElementById('t1_r_pab').textContent       = fmt6(pab);
+    document.getElementById('t1_r_pab_pct').textContent   = fmtP(pab);
+    document.getElementById('t1_r_pnab').textContent      = fmt6(pnab);
+    document.getElementById('t1_r_pnab_pct').textContent  = fmtP(pnab);
+    document.getElementById('t1_r_panb').textContent      = fmt6(panb);
+    document.getElementById('t1_r_panb_pct').textContent  = fmtP(panb);
+    document.getElementById('t1_r_pnanb').textContent     = fmt6(pnanb);
+    document.getElementById('t1_r_pnanb_pct').textContent = fmtP(pnanb);
+    document.getElementById('t1_bayes_table').innerHTML   = buildBayesTable(pAB, pAnB, pa, pnAB, pnAnB, pnota, pb, pnotb);
     setBar('t1_bar', 't1_bar_lbl', pab);
     showResults('t1_results');
   } catch(e) { showError('t1_error', e.message); }
@@ -872,14 +1010,27 @@ function calcTab2() {
     if (pa < 0 || pa > 1) throw new Error('Calculated P(A) is invalid (< 0 or > 1). Check your inputs.');
     if (pb === 0) throw new Error('P(B) = 0 — calculation not possible.');
 
-    const pab  = (pba * pa) / pb;
-    const pnab = 1 - pab;
+    const pab   = (pba * pa) / pb;
+    const pnab  = 1 - pab;
+    const pnota = 1 - pa;
+    const pnotb = 1 - pb;
+    const panb  = pnotb > 0 ? ((1 - pba) * pa) / pnotb : 0;
+    const pnanb = 1 - panb;
+    const pAB   = pba  * pa;
+    const pAnB  = (1 - pba)  * pa;
+    const pnAB  = pbna * pnota;
+    const pnAnB = (1 - pbna) * pnota;
 
-    document.getElementById('t2_r_pa').textContent   = fmt6(pa);
-    document.getElementById('t2_r_pab').textContent  = fmt6(pab);
-    document.getElementById('t2_r_pab_pct').textContent = fmtP(pab);
-    document.getElementById('t2_r_pnab').textContent = fmt6(pnab);
-    document.getElementById('t2_r_pnab_pct').textContent = fmtP(pnab);
+    document.getElementById('t2_r_pa').textContent        = fmt6(pa);
+    document.getElementById('t2_r_pab').textContent       = fmt6(pab);
+    document.getElementById('t2_r_pab_pct').textContent   = fmtP(pab);
+    document.getElementById('t2_r_pnab').textContent      = fmt6(pnab);
+    document.getElementById('t2_r_pnab_pct').textContent  = fmtP(pnab);
+    document.getElementById('t2_r_panb').textContent      = fmt6(panb);
+    document.getElementById('t2_r_panb_pct').textContent  = fmtP(panb);
+    document.getElementById('t2_r_pnanb').textContent     = fmt6(pnanb);
+    document.getElementById('t2_r_pnanb_pct').textContent = fmtP(pnanb);
+    document.getElementById('t2_bayes_table').innerHTML   = buildBayesTable(pAB, pAnB, pa, pnAB, pnAnB, pnota, pb, pnotb);
     setBar('t2_bar', 't2_bar_lbl', pab);
     showResults('t2_results');
   } catch(e) { showError('t2_error', e.message); }
@@ -930,13 +1081,24 @@ function calcTab3() {
       const pb_pt   = pba_pt * pa + pbna_pt * pnota;
       const pt      = pb_pt > 0 ? (pba_pt * pa) / pb_pt : NaN;
 
-      document.getElementById('t3_r_pba').textContent    = fmt6(pba_pt);
-      document.getElementById('t3_r_pbna').textContent   = fmt6(pbna_pt);
-      document.getElementById('t3_r_pb').textContent     = fmt6(pb_pt);
-      document.getElementById('t3_r_pt').textContent     = fmt6(pt);
-      document.getElementById('t3_r_mean').textContent   = fmt6(mn);
-      document.getElementById('t3_r_median').textContent = fmt6(med);
-      document.getElementById('t3_r_ci').textContent     = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
+      const pnotb_pt  = 1 - pb_pt;
+      const panb_pt   = pnotb_pt > 0 ? ((1 - pba_pt) * pa) / pnotb_pt : 0;
+      const pnanb_pt  = 1 - panb_pt;
+      const pAB_pt    = pba_pt  * pa;
+      const pAnB_pt   = (1 - pba_pt)  * pa;
+      const pnAB_pt   = pbna_pt * pnota;
+      const pnAnB_pt  = (1 - pbna_pt) * pnota;
+
+      document.getElementById('t3_r_pba').textContent     = fmt6(pba_pt);
+      document.getElementById('t3_r_pbna').textContent    = fmt6(pbna_pt);
+      document.getElementById('t3_r_pb').textContent      = fmt6(pb_pt);
+      document.getElementById('t3_r_pt').textContent      = fmt6(pt);
+      document.getElementById('t3_r_mean').textContent    = fmt6(mn);
+      document.getElementById('t3_r_median').textContent  = fmt6(med);
+      document.getElementById('t3_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
+      document.getElementById('t3_r_panb').textContent    = fmt6(panb_pt);
+      document.getElementById('t3_r_pnanb').textContent   = fmt6(pnanb_pt);
+      document.getElementById('t3_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
       drawCIbar('t3_ci_range', 't3_ci_point', lo, hi, pt);
       showResults('t3_results');
     } catch(e) {
@@ -990,12 +1152,23 @@ function calcTab4() {
       const pb_pt = pba_h * pa + pbna_h * pnota;
       const pt    = pb_pt > 0 ? (pba_h * pa) / pb_pt : NaN;
 
-      document.getElementById('t4_r_pba').textContent  = fmt6(pba_h);
-      document.getElementById('t4_r_pbna').textContent = fmt6(pbna_h);
-      document.getElementById('t4_r_pb').textContent   = fmt6(pb_pt);
-      document.getElementById('t4_r_pt').textContent   = fmt6(pt);
-      document.getElementById('t4_r_mean').textContent = fmt6(mn);
-      document.getElementById('t4_r_ci').textContent   = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
+      const pnotb_pt  = 1 - pb_pt;
+      const panb_pt   = pnotb_pt > 0 ? ((1 - pba_h) * pa) / pnotb_pt : 0;
+      const pnanb_pt  = 1 - panb_pt;
+      const pAB_pt    = pba_h  * pa;
+      const pAnB_pt   = (1 - pba_h)  * pa;
+      const pnAB_pt   = pbna_h * pnota;
+      const pnAnB_pt  = (1 - pbna_h) * pnota;
+
+      document.getElementById('t4_r_pba').textContent     = fmt6(pba_h);
+      document.getElementById('t4_r_pbna').textContent    = fmt6(pbna_h);
+      document.getElementById('t4_r_pb').textContent      = fmt6(pb_pt);
+      document.getElementById('t4_r_pt').textContent      = fmt6(pt);
+      document.getElementById('t4_r_mean').textContent    = fmt6(mn);
+      document.getElementById('t4_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
+      document.getElementById('t4_r_panb').textContent    = fmt6(panb_pt);
+      document.getElementById('t4_r_pnanb').textContent   = fmt6(pnanb_pt);
+      document.getElementById('t4_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
       drawCIbar('t4_ci_range', 't4_ci_point', lo, hi, pt);
       showResults('t4_results');
     } catch(e) {
