@@ -483,7 +483,7 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-save" onclick="saveTab1()">📥 Save Results as CSV</button>
+      <button class="btn btn-save" onclick="saveTab1()">📥 Save Results as TXT</button>
     </div>
   </div><!-- /tab0 -->
 
@@ -560,7 +560,7 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-save" onclick="saveTab2()">📥 Save Results as CSV</button>
+      <button class="btn btn-save" onclick="saveTab2()">📥 Save Results as TXT</button>
     </div>
   </div><!-- /tab1 -->
 
@@ -673,7 +673,7 @@
           <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
         </div>
       </div>
-      <button class="btn btn-save" onclick="saveTab3()">📥 Save Results as CSV</button>
+      <button class="btn btn-save" onclick="saveTab3()">📥 Save Results as TXT</button>
     </div>
   </div><!-- /tab2 -->
 
@@ -782,7 +782,7 @@
           <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
         </div>
       </div>
-      <button class="btn btn-save" onclick="saveTab4()">📥 Save Results as CSV</button>
+      <button class="btn btn-save" onclick="saveTab4()">📥 Save Results as TXT</button>
     </div>
   </div><!-- /tab3 -->
 
@@ -1212,9 +1212,8 @@ document.addEventListener('keydown', e => {
 // ════════════════════════════════════════════════════════
 // CSV SAVE HELPERS
 // ════════════════════════════════════════════════════════
-function downloadCSV(filename, rows) {
-  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+function downloadTXT(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
   document.body.appendChild(a);
@@ -1225,145 +1224,160 @@ function downloadCSV(filename, rows) {
 
 function g(id) { return document.getElementById(id).textContent; }
 
-function jointRows(pAB, pAnB, pa, pnAB, pnAnB, pnA, pB, pnB) {
-  return [
-    ['', 'B', 'not-B', 'P(row)'],
-    ['A',    pAB,  pAnB,  pa],
-    ['not-A', pnAB, pnAnB, pnA],
-    ['P(col)', pB,  pnB,  '1.000000']
-  ];
+const HR  = '='.repeat(60);
+const hr  = '-'.repeat(60);
+const pad = (s, w) => String(s).padEnd(w);
+const now = () => new Date().toLocaleString();
+
+function fmtMetric(label, value, pct) {
+  const line = pad(label, 28) + pad(value, 14) + (pct || '');
+  return line;
+}
+
+function fmtJointTable(pAB, pAnB, pA, pnAB, pnAnB, pnA, pB, pnB) {
+  const c1 = 10, c2 = 12, c3 = 12, c4 = 12;
+  const h  = pad('', c1) + pad('B', c2) + pad('not-B', c3) + pad('P(row)', c4);
+  const r1 = pad('A',       c1) + pad(pAB,  c2) + pad(pAnB,  c3) + pad(pA,        c4);
+  const r2 = pad('not-A',   c1) + pad(pnAB, c2) + pad(pnAnB, c3) + pad(pnA,       c4);
+  const r3 = pad('P(col)',  c1) + pad(pB,   c2) + pad(pnB,   c3) + pad('1.000000', c4);
+  return [h, '-'.repeat(46), r1, r2, '-'.repeat(46), r3].join('\r\n');
 }
 
 function saveTab1() {
-  const rows = [
-    ['Eric\'s Bayes Theorem Calculator — Method 1 (Given P(A))'],
-    ['Metric', 'Value', 'Percentage'],
-    ['P(B) — Marginal',      g('t1_r_pb'),    ''],
-    ['P(A|B) — Posterior',   g('t1_r_pab'),   g('t1_r_pab_pct')],
-    ['P(not-A|B)',            g('t1_r_pnab'),  g('t1_r_pnab_pct')],
-    ['P(A|not-B)',            g('t1_r_panb'),  g('t1_r_panb_pct')],
-    ['P(not-A|not-B)',        g('t1_r_pnanb'), g('t1_r_pnanb_pct')],
-    [],
-    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
-    ...jointRows(g('t1_r_pab') ? (parseFloat(g('t1_r_pb'))*parseFloat(g('t1_r_pab'))).toFixed(6) : '',
-      '', '', '', '', '', g('t1_r_pb'), '')
-  ];
-  // Rebuild joint values from displayed results
-  const pab  = parseFloat(g('t1_r_pab'));
-  const pnab = parseFloat(g('t1_r_pnab'));
-  const pb   = parseFloat(g('t1_r_pb'));
-  const pnb  = (1 - pb).toFixed(6);
-  const panb = parseFloat(g('t1_r_panb'));
-  const pnanb= parseFloat(g('t1_r_pnanb'));
-  const pAB  = (pab  * pb).toFixed(6);
-  const pAnB = (panb * (1-pb)).toFixed(6);
-  const pnAB = (pnab * pb).toFixed(6);
-  const pnAnB= (pnanb* (1-pb)).toFixed(6);
-  const pA   = (parseFloat(pAB) + parseFloat(pAnB)).toFixed(6);
-  const pnA  = (parseFloat(pnAB)+ parseFloat(pnAnB)).toFixed(6);
-  const finalRows = [
-    ['Eric\'s Bayes Theorem Calculator — Method 1 (Given P(A))'],
-    ['Metric', 'Value', 'Percentage'],
-    ['P(B) — Marginal',      pb.toFixed(6), ''],
-    ['P(A|B) — Posterior',   g('t1_r_pab'),   g('t1_r_pab_pct')],
-    ['P(not-A|B)',            g('t1_r_pnab'),  g('t1_r_pnab_pct')],
-    ['P(A|not-B)',            g('t1_r_panb'),  g('t1_r_panb_pct')],
-    ['P(not-A|not-B)',        g('t1_r_pnanb'), g('t1_r_pnanb_pct')],
-    [],
-    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
-    ['', 'B', 'not-B', 'P(row)'],
-    ['A',      pAB,  pAnB,  pA],
-    ['not-A',  pnAB, pnAnB, pnA],
-    ['P(col)', pb.toFixed(6), pnb, '1.000000']
-  ];
-  downloadCSV('BayesT_Method1_Results.csv', finalRows);
+  const pab   = parseFloat(g('t1_r_pab'));
+  const pnab  = parseFloat(g('t1_r_pnab'));
+  const pb    = parseFloat(g('t1_r_pb'));
+  const panb  = parseFloat(g('t1_r_panb'));
+  const pnanb = parseFloat(g('t1_r_pnanb'));
+  const pnb   = 1 - pb;
+  const pAB   = (pab   * pb).toFixed(6);
+  const pAnB  = (panb  * pnb).toFixed(6);
+  const pnAB  = (pnab  * pb).toFixed(6);
+  const pnAnB = (pnanb * pnb).toFixed(6);
+  const pA    = (parseFloat(pAB) + parseFloat(pAnB)).toFixed(6);
+  const pnA   = (parseFloat(pnAB)+ parseFloat(pnAnB)).toFixed(6);
+
+  const txt = [
+    HR,
+    "  Eric's Bayes Theorem Calculator",
+    "  Method 1 — Given P(A)",
+    "  Generated: " + now(),
+    HR, '',
+    pad('Metric', 28) + pad('Value', 14) + 'Percentage',
+    hr,
+    fmtMetric('P(B)  — Marginal',     g('t1_r_pb'),    ''),
+    fmtMetric('P(A|B) — Posterior',   g('t1_r_pab'),   g('t1_r_pab_pct')),
+    fmtMetric('P(not-A|B)',           g('t1_r_pnab'),  g('t1_r_pnab_pct')),
+    fmtMetric('P(A|not-B)',           g('t1_r_panb'),  g('t1_r_panb_pct')),
+    fmtMetric('P(not-A|not-B)',       g('t1_r_pnanb'), g('t1_r_pnanb_pct')),
+    '', hr,
+    '  Bayesian Probability Table — Joint Probabilities P(row AND col)',
+    hr,
+    fmtJointTable(pAB, pAnB, pA, pnAB, pnAnB, pnA, pb.toFixed(6), pnb.toFixed(6)),
+    '', HR
+  ].join('\r\n');
+  downloadTXT('BayesT_Method1_Results.txt', txt);
 }
 
 function saveTab2() {
-  const pab  = parseFloat(g('t2_r_pab'));
-  const pnab = parseFloat(g('t2_r_pnab'));
-  const pa   = parseFloat(g('t2_r_pa'));
-  const panb = parseFloat(g('t2_r_panb'));
-  const pnanb= parseFloat(g('t2_r_pnanb'));
-  // Recover pb from pa and pab: pb = pba*pa/pab, but easier: we stored pa
-  // pAB = pab*pb, and we need pb. Use: pA = pAB+pAnB, with pAB=pab*pb, pAnB=panb*(1-pb)
-  // Actually: pA = pa (recovered), pAB + pAnB = pa => pab*pb + panb*(1-pb) = pa
-  // Solve: pb*(pab-panb) = pa - panb => pb = (pa-panb)/(pab-panb)
+  const pab   = parseFloat(g('t2_r_pab'));
+  const pnab  = parseFloat(g('t2_r_pnab'));
+  const pa    = parseFloat(g('t2_r_pa'));
+  const panb  = parseFloat(g('t2_r_panb'));
+  const pnanb = parseFloat(g('t2_r_pnanb'));
   let pb;
   if (Math.abs(pab - panb) > 1e-10) {
     pb = (pa - panb) / (pab - panb);
-  } else {
-    pb = pa; // fallback
-  }
+  } else { pb = pa; }
   pb = Math.max(0, Math.min(1, pb));
-  const pnb  = 1 - pb;
-  const pAB  = (pab  * pb).toFixed(6);
-  const pAnB = (panb * pnb).toFixed(6);
-  const pnA  = (1 - pa).toFixed(6);
-  const pnAB = (pnab * pb).toFixed(6);
-  const pnAnB= (pnanb* pnb).toFixed(6);
-  downloadCSV('BayesT_Method2_Results.csv', [
-    ['Eric\'s Bayes Theorem Calculator — Method 2 (Given P(B))'],
-    ['Metric', 'Value', 'Percentage'],
-    ['P(A) — Recovered prior', g('t2_r_pa'),    ''],
-    ['P(A|B) — Posterior',     g('t2_r_pab'),   g('t2_r_pab_pct')],
-    ['P(not-A|B)',              g('t2_r_pnab'),  g('t2_r_pnab_pct')],
-    ['P(A|not-B)',              g('t2_r_panb'),  g('t2_r_panb_pct')],
-    ['P(not-A|not-B)',          g('t2_r_pnanb'), g('t2_r_pnanb_pct')],
-    [],
-    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
-    ['', 'B', 'not-B', 'P(row)'],
-    ['A',      pAB,  pAnB,  pa.toFixed(6)],
-    ['not-A',  pnAB, pnAnB, pnA],
-    ['P(col)', pb.toFixed(6), pnb.toFixed(6), '1.000000']
-  ]);
+  const pnb   = 1 - pb;
+  const pAB   = (pab   * pb).toFixed(6);
+  const pAnB  = (panb  * pnb).toFixed(6);
+  const pnA   = (1 - pa).toFixed(6);
+  const pnAB  = (pnab  * pb).toFixed(6);
+  const pnAnB = (pnanb * pnb).toFixed(6);
+
+  const txt = [
+    HR,
+    "  Eric's Bayes Theorem Calculator",
+    "  Method 2 — Given P(B)",
+    "  Generated: " + now(),
+    HR, '',
+    pad('Metric', 28) + pad('Value', 14) + 'Percentage',
+    hr,
+    fmtMetric('P(A)  — Recovered prior', g('t2_r_pa'),    ''),
+    fmtMetric('P(A|B) — Posterior',      g('t2_r_pab'),   g('t2_r_pab_pct')),
+    fmtMetric('P(not-A|B)',              g('t2_r_pnab'),  g('t2_r_pnab_pct')),
+    fmtMetric('P(A|not-B)',              g('t2_r_panb'),  g('t2_r_panb_pct')),
+    fmtMetric('P(not-A|not-B)',          g('t2_r_pnanb'), g('t2_r_pnanb_pct')),
+    '', hr,
+    '  Bayesian Probability Table — Joint Probabilities P(row AND col)',
+    hr,
+    fmtJointTable(pAB, pAnB, pa.toFixed(6), pnAB, pnAnB, pnA, pb.toFixed(6), pnb.toFixed(6)),
+    '', HR
+  ].join('\r\n');
+  downloadTXT('BayesT_Method2_Results.txt', txt);
 }
 
 function saveTab3() {
   const c = _t3cache;
   if (!c) return;
-  downloadCSV('BayesT_Method3_CredibleInterval_Results.csv', [
-    ['Eric\'s Bayes Theorem Calculator \u2014 Method 3 (Bayesian Credible Interval)'],
-    ['Metric', 'Value'],
-    ['P(B|A) observed',       fmt6(c.pba_pt)],
-    ['P(B|not-A) observed',   fmt6(c.pbna_pt)],
-    ['P(B) point estimate',   fmt6(c.pb_pt)],
-    ['P(A|B) point estimate', fmt6(c.pt)],
-    ['Posterior mean',        fmt6(c.mn)],
-    ['Posterior median',      fmt6(c.med)],
-    ['95% Credible Interval', `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`],
-    ['P(A|not-B) point est.', fmt6(c.panb_pt)],
-    ['P(not-A|not-B) pt est.',fmt6(c.pnanb_pt)],
-    [],
-    ['Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates'],
-    ['', 'B', 'not-B', 'P(row)'],
-    ['A',      fmt6(c.pAB_pt),  fmt6(c.pAnB_pt),  fmt6(c.pa)],
-    ['not-A',  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota)],
-    ['P(col)', fmt6(c.pb_pt),   fmt6(c.pnotb_pt),  '1.000000']
-  ]);
+  const txt = [
+    HR,
+    "  Eric's Bayes Theorem Calculator",
+    "  Method 3 — Bayesian Credible Interval (Beta-Binomial, 1,000,000 draws)",
+    "  Generated: " + now(),
+    HR, '',
+    pad('Metric', 28) + 'Value',
+    hr,
+    fmtMetric('P(B|A) observed',       fmt6(c.pba_pt)),
+    fmtMetric('P(B|not-A) observed',   fmt6(c.pbna_pt)),
+    fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
+    fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
+    fmtMetric('Posterior mean',        fmt6(c.mn)),
+    fmtMetric('Posterior median',      fmt6(c.med)),
+    fmtMetric('95% Credible Interval', `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
+    fmtMetric('P(A|not-B) pt. est.',   fmt6(c.panb_pt)),
+    fmtMetric('P(not-A|not-B) pt. est.',fmt6(c.pnanb_pt)),
+    '', hr,
+    '  Bayesian Probability Table — Joint Probabilities P(row AND col) — Point Estimates',
+    hr,
+    fmtJointTable(fmt6(c.pAB_pt), fmt6(c.pAnB_pt), fmt6(c.pa),
+                  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota),
+                  fmt6(c.pb_pt), fmt6(c.pnotb_pt)),
+    '', HR
+  ].join('\r\n');
+  downloadTXT('BayesT_Method3_CredibleInterval_Results.txt', txt);
 }
 
 function saveTab4() {
   const c = _t4cache;
   if (!c) return;
-  downloadCSV('BayesT_Method4_BootstrapCI_Results.csv', [
-    ['Eric\'s Bayes Theorem Calculator \u2014 Method 4 (Bootstrap CI)'],
-    ['Metric', 'Value'],
-    ['P(B|A) observed',       fmt6(c.pba_h)],
-    ['P(B|not-A) observed',   fmt6(c.pbna_h)],
-    ['P(B) point estimate',   fmt6(c.pb_pt)],
-    ['P(A|B) point estimate', fmt6(c.pt)],
-    ['Bootstrap mean',        fmt6(c.mn)],
-    ['95% Bootstrap CI',      `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`],
-    ['P(A|not-B) point est.', fmt6(c.panb_pt)],
-    ['P(not-A|not-B) pt est.',fmt6(c.pnanb_pt)],
-    [],
-    ['Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates'],
-    ['', 'B', 'not-B', 'P(row)'],
-    ['A',      fmt6(c.pAB_pt),  fmt6(c.pAnB_pt),  fmt6(c.pa)],
-    ['not-A',  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota)],
-    ['P(col)', fmt6(c.pb_pt),   fmt6(c.pnotb_pt),  '1.000000']
-  ]);
+  const txt = [
+    HR,
+    "  Eric's Bayes Theorem Calculator",
+    "  Method 4 — Bootstrap Confidence Interval (Parametric, 1,000,000 replicates)",
+    "  Generated: " + now(),
+    HR, '',
+    pad('Metric', 28) + 'Value',
+    hr,
+    fmtMetric('P(B|A) observed',       fmt6(c.pba_h)),
+    fmtMetric('P(B|not-A) observed',   fmt6(c.pbna_h)),
+    fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
+    fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
+    fmtMetric('Bootstrap mean',        fmt6(c.mn)),
+    fmtMetric('95% Bootstrap CI',      `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
+    fmtMetric('P(A|not-B) pt. est.',   fmt6(c.panb_pt)),
+    fmtMetric('P(not-A|not-B) pt. est.',fmt6(c.pnanb_pt)),
+    '', hr,
+    '  Bayesian Probability Table — Joint Probabilities P(row AND col) — Point Estimates',
+    hr,
+    fmtJointTable(fmt6(c.pAB_pt), fmt6(c.pAnB_pt), fmt6(c.pa),
+                  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota),
+                  fmt6(c.pb_pt), fmt6(c.pnotb_pt)),
+    '', HR
+  ].join('\r\n');
+  downloadTXT('BayesT_Method4_BootstrapCI_Results.txt', txt);
 }
 </script>
 </body>
