@@ -169,6 +169,17 @@
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,.45); }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .btn-save {
+    background: var(--card);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    width: 100%;
+    justify-content: center;
+    margin-top: .75rem;
+    font-size: .88rem;
+  }
+  .btn-save:hover { background: #eef2ff; transform: translateY(-1px); }
+  .btn-save:active { transform: translateY(0); }
 
   /* ── Spinner ── */
   .spinner {
@@ -472,6 +483,7 @@
           </div>
         </div>
       </div>
+      <button class="btn btn-save" onclick="saveTab1()">📥 Save Results as CSV</button>
     </div>
   </div><!-- /tab0 -->
 
@@ -548,6 +560,7 @@
           </div>
         </div>
       </div>
+      <button class="btn btn-save" onclick="saveTab2()">📥 Save Results as CSV</button>
     </div>
   </div><!-- /tab1 -->
 
@@ -660,6 +673,7 @@
           <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
         </div>
       </div>
+      <button class="btn btn-save" onclick="saveTab3()">📥 Save Results as CSV</button>
     </div>
   </div><!-- /tab2 -->
 
@@ -768,6 +782,7 @@
           <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
         </div>
       </div>
+      <button class="btn btn-save" onclick="saveTab4()">📥 Save Results as CSV</button>
     </div>
   </div><!-- /tab3 -->
 
@@ -785,6 +800,10 @@ function switchTab(idx) {
 // ── Helpers ───────────────────────────────────────────
 const fmt6 = v => v.toFixed(6);
 const fmtP = v => (v * 100).toFixed(2) + '%';
+
+// Module-level cache for CSV export of simulation tabs
+let _t3cache = null;
+let _t4cache = null;
 
 function showError(id, msg) {
   const el = document.getElementById(id);
@@ -1099,6 +1118,8 @@ function calcTab3() {
       document.getElementById('t3_r_panb').textContent    = fmt6(panb_pt);
       document.getElementById('t3_r_pnanb').textContent   = fmt6(pnanb_pt);
       document.getElementById('t3_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
+      _t3cache = { pba_pt, pbna_pt, pb_pt, pt, mn, med, lo, hi, panb_pt, pnanb_pt,
+                   pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
       drawCIbar('t3_ci_range', 't3_ci_point', lo, hi, pt);
       showResults('t3_results');
     } catch(e) {
@@ -1169,6 +1190,8 @@ function calcTab4() {
       document.getElementById('t4_r_panb').textContent    = fmt6(panb_pt);
       document.getElementById('t4_r_pnanb').textContent   = fmt6(pnanb_pt);
       document.getElementById('t4_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
+      _t4cache = { pba_h, pbna_h, pb_pt, pt, mn, lo, hi, panb_pt, pnanb_pt,
+                   pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
       drawCIbar('t4_ci_range', 't4_ci_point', lo, hi, pt);
       showResults('t4_results');
     } catch(e) {
@@ -1185,6 +1208,163 @@ document.addEventListener('keydown', e => {
   const activeTab = [...document.querySelectorAll('.tab-panel')].findIndex(p => p.classList.contains('active'));
   [calcTab1, calcTab2, calcTab3, calcTab4][activeTab]();
 });
+
+// ════════════════════════════════════════════════════════
+// CSV SAVE HELPERS
+// ════════════════════════════════════════════════════════
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function g(id) { return document.getElementById(id).textContent; }
+
+function jointRows(pAB, pAnB, pa, pnAB, pnAnB, pnA, pB, pnB) {
+  return [
+    ['', 'B', 'not-B', 'P(row)'],
+    ['A',    pAB,  pAnB,  pa],
+    ['not-A', pnAB, pnAnB, pnA],
+    ['P(col)', pB,  pnB,  '1.000000']
+  ];
+}
+
+function saveTab1() {
+  const rows = [
+    ['Eric\'s Bayes Theorem Calculator — Method 1 (Given P(A))'],
+    ['Metric', 'Value', 'Percentage'],
+    ['P(B) — Marginal',      g('t1_r_pb'),    ''],
+    ['P(A|B) — Posterior',   g('t1_r_pab'),   g('t1_r_pab_pct')],
+    ['P(not-A|B)',            g('t1_r_pnab'),  g('t1_r_pnab_pct')],
+    ['P(A|not-B)',            g('t1_r_panb'),  g('t1_r_panb_pct')],
+    ['P(not-A|not-B)',        g('t1_r_pnanb'), g('t1_r_pnanb_pct')],
+    [],
+    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
+    ...jointRows(g('t1_r_pab') ? (parseFloat(g('t1_r_pb'))*parseFloat(g('t1_r_pab'))).toFixed(6) : '',
+      '', '', '', '', '', g('t1_r_pb'), '')
+  ];
+  // Rebuild joint values from displayed results
+  const pab  = parseFloat(g('t1_r_pab'));
+  const pnab = parseFloat(g('t1_r_pnab'));
+  const pb   = parseFloat(g('t1_r_pb'));
+  const pnb  = (1 - pb).toFixed(6);
+  const panb = parseFloat(g('t1_r_panb'));
+  const pnanb= parseFloat(g('t1_r_pnanb'));
+  const pAB  = (pab  * pb).toFixed(6);
+  const pAnB = (panb * (1-pb)).toFixed(6);
+  const pnAB = (pnab * pb).toFixed(6);
+  const pnAnB= (pnanb* (1-pb)).toFixed(6);
+  const pA   = (parseFloat(pAB) + parseFloat(pAnB)).toFixed(6);
+  const pnA  = (parseFloat(pnAB)+ parseFloat(pnAnB)).toFixed(6);
+  const finalRows = [
+    ['Eric\'s Bayes Theorem Calculator — Method 1 (Given P(A))'],
+    ['Metric', 'Value', 'Percentage'],
+    ['P(B) — Marginal',      pb.toFixed(6), ''],
+    ['P(A|B) — Posterior',   g('t1_r_pab'),   g('t1_r_pab_pct')],
+    ['P(not-A|B)',            g('t1_r_pnab'),  g('t1_r_pnab_pct')],
+    ['P(A|not-B)',            g('t1_r_panb'),  g('t1_r_panb_pct')],
+    ['P(not-A|not-B)',        g('t1_r_pnanb'), g('t1_r_pnanb_pct')],
+    [],
+    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
+    ['', 'B', 'not-B', 'P(row)'],
+    ['A',      pAB,  pAnB,  pA],
+    ['not-A',  pnAB, pnAnB, pnA],
+    ['P(col)', pb.toFixed(6), pnb, '1.000000']
+  ];
+  downloadCSV('BayesT_Method1_Results.csv', finalRows);
+}
+
+function saveTab2() {
+  const pab  = parseFloat(g('t2_r_pab'));
+  const pnab = parseFloat(g('t2_r_pnab'));
+  const pa   = parseFloat(g('t2_r_pa'));
+  const panb = parseFloat(g('t2_r_panb'));
+  const pnanb= parseFloat(g('t2_r_pnanb'));
+  // Recover pb from pa and pab: pb = pba*pa/pab, but easier: we stored pa
+  // pAB = pab*pb, and we need pb. Use: pA = pAB+pAnB, with pAB=pab*pb, pAnB=panb*(1-pb)
+  // Actually: pA = pa (recovered), pAB + pAnB = pa => pab*pb + panb*(1-pb) = pa
+  // Solve: pb*(pab-panb) = pa - panb => pb = (pa-panb)/(pab-panb)
+  let pb;
+  if (Math.abs(pab - panb) > 1e-10) {
+    pb = (pa - panb) / (pab - panb);
+  } else {
+    pb = pa; // fallback
+  }
+  pb = Math.max(0, Math.min(1, pb));
+  const pnb  = 1 - pb;
+  const pAB  = (pab  * pb).toFixed(6);
+  const pAnB = (panb * pnb).toFixed(6);
+  const pnA  = (1 - pa).toFixed(6);
+  const pnAB = (pnab * pb).toFixed(6);
+  const pnAnB= (pnanb* pnb).toFixed(6);
+  downloadCSV('BayesT_Method2_Results.csv', [
+    ['Eric\'s Bayes Theorem Calculator — Method 2 (Given P(B))'],
+    ['Metric', 'Value', 'Percentage'],
+    ['P(A) — Recovered prior', g('t2_r_pa'),    ''],
+    ['P(A|B) — Posterior',     g('t2_r_pab'),   g('t2_r_pab_pct')],
+    ['P(not-A|B)',              g('t2_r_pnab'),  g('t2_r_pnab_pct')],
+    ['P(A|not-B)',              g('t2_r_panb'),  g('t2_r_panb_pct')],
+    ['P(not-A|not-B)',          g('t2_r_pnanb'), g('t2_r_pnanb_pct')],
+    [],
+    ['Bayesian Probability Table — Joint Probabilities P(row AND col)'],
+    ['', 'B', 'not-B', 'P(row)'],
+    ['A',      pAB,  pAnB,  pa.toFixed(6)],
+    ['not-A',  pnAB, pnAnB, pnA],
+    ['P(col)', pb.toFixed(6), pnb.toFixed(6), '1.000000']
+  ]);
+}
+
+function saveTab3() {
+  const c = _t3cache;
+  if (!c) return;
+  downloadCSV('BayesT_Method3_CredibleInterval_Results.csv', [
+    ['Eric\'s Bayes Theorem Calculator \u2014 Method 3 (Bayesian Credible Interval)'],
+    ['Metric', 'Value'],
+    ['P(B|A) observed',       fmt6(c.pba_pt)],
+    ['P(B|not-A) observed',   fmt6(c.pbna_pt)],
+    ['P(B) point estimate',   fmt6(c.pb_pt)],
+    ['P(A|B) point estimate', fmt6(c.pt)],
+    ['Posterior mean',        fmt6(c.mn)],
+    ['Posterior median',      fmt6(c.med)],
+    ['95% Credible Interval', `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`],
+    ['P(A|not-B) point est.', fmt6(c.panb_pt)],
+    ['P(not-A|not-B) pt est.',fmt6(c.pnanb_pt)],
+    [],
+    ['Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates'],
+    ['', 'B', 'not-B', 'P(row)'],
+    ['A',      fmt6(c.pAB_pt),  fmt6(c.pAnB_pt),  fmt6(c.pa)],
+    ['not-A',  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota)],
+    ['P(col)', fmt6(c.pb_pt),   fmt6(c.pnotb_pt),  '1.000000']
+  ]);
+}
+
+function saveTab4() {
+  const c = _t4cache;
+  if (!c) return;
+  downloadCSV('BayesT_Method4_BootstrapCI_Results.csv', [
+    ['Eric\'s Bayes Theorem Calculator \u2014 Method 4 (Bootstrap CI)'],
+    ['Metric', 'Value'],
+    ['P(B|A) observed',       fmt6(c.pba_h)],
+    ['P(B|not-A) observed',   fmt6(c.pbna_h)],
+    ['P(B) point estimate',   fmt6(c.pb_pt)],
+    ['P(A|B) point estimate', fmt6(c.pt)],
+    ['Bootstrap mean',        fmt6(c.mn)],
+    ['95% Bootstrap CI',      `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`],
+    ['P(A|not-B) point est.', fmt6(c.panb_pt)],
+    ['P(not-A|not-B) pt est.',fmt6(c.pnanb_pt)],
+    [],
+    ['Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates'],
+    ['', 'B', 'not-B', 'P(row)'],
+    ['A',      fmt6(c.pAB_pt),  fmt6(c.pAnB_pt),  fmt6(c.pa)],
+    ['not-A',  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota)],
+    ['P(col)', fmt6(c.pb_pt),   fmt6(c.pnotb_pt),  '1.000000']
+  ]);
+}
 </script>
 </body>
 </html>
