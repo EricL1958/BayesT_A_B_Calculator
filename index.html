@@ -403,8 +403,8 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab(0)">① Given P(A)</button>
     <button class="tab-btn"       onclick="switchTab(1)">② Given P(B)</button>
-    <button class="tab-btn"       onclick="switchTab(2)">③ Credible Interval</button>
-    <button class="tab-btn"       onclick="switchTab(3)">④ Bootstrap CI</button>
+    <button class="tab-btn"       onclick="switchTab(2)">③ CI given P(A)</button>
+    <button class="tab-btn"       onclick="switchTab(3)">④ CI given P(B)</button>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -565,22 +565,46 @@
   </div><!-- /tab1 -->
 
   <!-- ══════════════════════════════════════════
-       TAB 3 — Credible Interval (Bayesian)
+       TAB 3 — Credible + Bootstrap CI given P(A)
   ══════════════════════════════════════════ -->
   <div class="tab-panel" id="tab2">
     <div class="card">
-      <div class="card-title"><span class="badge">Method 3</span> 95% Credible Interval — Beta-Binomial</div>
+      <div class="card-title"><span class="badge">Method 3</span> 95% HPD Credible Interval &amp; Bootstrap CI — given P(A)</div>
 
       <div class="info-box">
-        Enter the <strong>sample counts</strong> from which P(B|A) and P(B|¬A) were estimated.
-        Each likelihood is modelled as a <strong>Beta distribution</strong> and propagated through
-        Bayes' theorem via Monte Carlo simulation (1 000 000 draws).
+        Runs <strong>both</strong> the Bayesian credible interval (Beta-Binomial posterior, 1 000 000 draws)
+        and the parametric bootstrap CI (frequentist) in a single simulation.
+        P(A) can be entered as a <strong>fixed probability</strong> or as <strong>sample counts</strong>
+        — when entered as counts, its uncertainty is propagated through both intervals.
       </div>
 
       <div class="form-grid">
         <div class="form-group full">
           <label>P(A) — Prior probability of A</label>
-          <input type="number" id="t3_pa" min="0" max="1" step="0.001" placeholder="e.g. 0.01">
+          <div style="display:flex; gap:.75rem; margin:.35rem 0 .6rem; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:.35rem; font-size:.85rem; cursor:pointer; text-transform:none; letter-spacing:0; color:var(--text); font-weight:600;">
+              <input type="radio" name="t3_pa_mode" value="direct" checked onchange="toggleMode('t3_pa')"> Enter probability directly
+            </label>
+            <label style="display:flex; align-items:center; gap:.35rem; font-size:.85rem; cursor:pointer; text-transform:none; letter-spacing:0; color:var(--text); font-weight:600;">
+              <input type="radio" name="t3_pa_mode" value="counts" onchange="toggleMode('t3_pa')"> From sample counts
+            </label>
+          </div>
+          <div id="t3_pa_direct">
+            <input type="number" id="t3_pa" min="0" max="1" step="0.001" placeholder="e.g. 0.01">
+            <span class="hint">Disease prevalence, base rate, etc.</span>
+          </div>
+          <div id="t3_pa_counts" style="display:none; grid-template-columns:1fr 1fr; gap:.75rem;">
+            <div class="form-group">
+              <label>Positives (successes)</label>
+              <input type="number" id="t3_spa" min="0" step="1" placeholder="e.g. 62237">
+              <span class="hint">A-positive cases observed</span>
+            </div>
+            <div class="form-group">
+              <label>Total (trials)</label>
+              <input type="number" id="t3_npa" min="1" step="1" placeholder="e.g. 1169873">
+              <span class="hint">Total population sampled</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -621,7 +645,7 @@
     </div>
 
     <div class="results card" id="t3_results">
-      <div class="card-title">Results — Bayesian Credible Interval</div>
+      <div class="card-title">Results — Credible Interval &amp; Bootstrap CI</div>
       <div class="result-grid">
         <div class="result-item">
           <div class="result-label">P(B|A) observed</div>
@@ -643,18 +667,53 @@
           <div class="result-label">P(¬A|B) — point est.</div>
           <div class="result-value" id="t3_r_pnab">—</div>
         </div>
-        <div class="result-item highlight-cyan">
-          <div class="result-label">Posterior mean</div>
-          <div class="result-value" id="t3_r_mean">—</div>
+        <div class="result-item full" style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:10px; padding:.75rem 1rem; margin:.25rem 0;">
+          <div class="result-label" style="font-weight:700; color:#0369a1; margin-bottom:.5rem;">▸ Bayesian HPD Credible Interval (Beta-Binomial posterior)</div>
+          <div class="result-grid" style="margin:0; gap:.6rem;">
+            <div class="result-item highlight-cyan">
+              <div class="result-label">Posterior mean</div>
+              <div class="result-value" id="t3_cr_mean">—</div>
+            </div>
+            <div class="result-item highlight-amber">
+              <div class="result-label">Posterior median</div>
+              <div class="result-value" id="t3_cr_median">—</div>
+            </div>
+            <div class="result-item highlight-green full">
+              <div class="result-label">95% HPD Interval</div>
+              <div class="result-value" id="t3_cr_ci">—</div>
+              <div class="result-pct">The 95% HPD interval is the shortest interval containing 95% of the posterior probability mass.</div>
+            </div>
+            <div class="prob-bar-wrap result-item full">
+              <div class="prob-bar-label">Credible CI visualised (0 → 1)</div>
+              <div class="prob-bar-track" style="height:14px">
+                <div class="ci-bar-range" id="t3_cr_ci_range"></div>
+                <div class="ci-bar-point" id="t3_cr_ci_point"></div>
+              </div>
+              <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
+            </div>
+          </div>
         </div>
-        <div class="result-item highlight-amber">
-          <div class="result-label">Posterior median</div>
-          <div class="result-value" id="t3_r_median">—</div>
-        </div>
-        <div class="result-item highlight-green full">
-          <div class="result-label">95% Credible Interval</div>
-          <div class="result-value" id="t3_r_ci">—</div>
-          <div class="result-pct">There is a 95% probability that the true P(A|B) lies within this range.</div>
+        <div class="result-item full" style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:10px; padding:.75rem 1rem; margin:.25rem 0;">
+          <div class="result-label" style="font-weight:700; color:#15803d; margin-bottom:.5rem;">▸ Parametric Bootstrap CI (Frequentist)</div>
+          <div class="result-grid" style="margin:0; gap:.6rem;">
+            <div class="result-item highlight-cyan">
+              <div class="result-label">Bootstrap mean</div>
+              <div class="result-value" id="t3_bt_mean">—</div>
+            </div>
+            <div class="result-item highlight-green full">
+              <div class="result-label">95% Bootstrap CI</div>
+              <div class="result-value" id="t3_bt_ci">—</div>
+              <div class="result-pct">95% of such intervals from repeated experiments would contain the true P(A|B).</div>
+            </div>
+            <div class="prob-bar-wrap result-item full">
+              <div class="prob-bar-label">Bootstrap CI visualised (0 → 1)</div>
+              <div class="prob-bar-track" style="height:14px">
+                <div class="ci-bar-range" id="t3_bt_ci_range"></div>
+                <div class="ci-bar-point" id="t3_bt_ci_point"></div>
+              </div>
+              <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
+            </div>
+          </div>
         </div>
         <div class="result-item highlight-amber">
           <div class="result-label">P(A|¬B) — point est.</div>
@@ -668,41 +727,56 @@
           <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col) — point estimates</div>
           <div id="t3_bayes_table"></div>
         </div>
-        <div class="prob-bar-wrap result-item">
-          <div class="prob-bar-label">CI visualised (0 → 1)</div>
-          <div class="prob-bar-track" style="height:14px">
-            <div class="ci-bar-range" id="t3_ci_range"></div>
-            <div class="ci-bar-point" id="t3_ci_point"></div>
-          </div>
-          <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
-        </div>
       </div>
       <button class="btn btn-save" onclick="saveTab3()">📥 Save Results as TXT</button>
     </div>
   </div><!-- /tab2 -->
 
   <!-- ══════════════════════════════════════════
-       TAB 4 — Bootstrap CI (Frequentist)
+       TAB 4 — Credible + Bootstrap CI given P(B)
   ══════════════════════════════════════════ -->
   <div class="tab-panel" id="tab3">
     <div class="card">
-      <div class="card-title"><span class="badge">Method 4</span> 95% Bootstrap Confidence Interval</div>
+      <div class="card-title"><span class="badge">Method 4</span> 95% HPD Credible Interval &amp; Bootstrap CI — given P(B)</div>
 
       <div class="info-box">
-        Uses a <strong>parametric bootstrap</strong>: new success counts are resampled from
-        Binomial distributions, simulating how the data could have varied by chance
-        (frequentist approach, 1 000 000 replicates).
+        P(A) is <strong>recovered algebraically</strong> from P(B) and the sampled likelihoods.
+        Runs <strong>both</strong> the Bayesian credible interval (Beta-Binomial) and the parametric
+        bootstrap CI (frequentist) in a single simulation of 1 000 000 draws. P(B) can be entered as a
+        <strong>fixed probability</strong> or as <strong>sample counts</strong>.
       </div>
 
       <div class="form-grid">
         <div class="form-group full">
-          <label>P(A) — Prior probability of A</label>
-          <input type="number" id="t4_pa" min="0" max="1" step="0.001" placeholder="e.g. 0.01">
+          <label>P(B) — Marginal probability of B</label>
+          <div style="display:flex; gap:.75rem; margin:.35rem 0 .6rem; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:.35rem; font-size:.85rem; cursor:pointer; text-transform:none; letter-spacing:0; color:var(--text); font-weight:600;">
+              <input type="radio" name="t4_pb_mode" value="direct" checked onchange="toggleMode('t4_pb')"> Enter probability directly
+            </label>
+            <label style="display:flex; align-items:center; gap:.35rem; font-size:.85rem; cursor:pointer; text-transform:none; letter-spacing:0; color:var(--text); font-weight:600;">
+              <input type="radio" name="t4_pb_mode" value="counts" onchange="toggleMode('t4_pb')"> From sample counts
+            </label>
+          </div>
+          <div id="t4_pb_direct">
+            <input type="number" id="t4_pb" min="0" max="1" step="0.001" placeholder="e.g. 0.10">
+            <span class="hint">Overall event rate — e.g. overall disease prevalence</span>
+          </div>
+          <div id="t4_pb_counts" style="display:none; grid-template-columns:1fr 1fr; gap:.75rem;">
+            <div class="form-group">
+              <label>Positives (successes)</label>
+              <input type="number" id="t4_spb" min="0" step="1" placeholder="e.g. 10000">
+              <span class="hint">B-positive cases observed</span>
+            </div>
+            <div class="form-group">
+              <label>Total (trials)</label>
+              <input type="number" id="t4_npb" min="1" step="1" placeholder="e.g. 100000">
+              <span class="hint">Total population sampled</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-top:.5rem; gap:1.25rem;">
-        <!-- LEFT: A-positive -->
         <div style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:12px; padding:1.1rem;">
           <div class="section-label" style="margin-top:0">P(B|A) — A-positive group</div>
           <div class="form-group" style="margin-bottom:.75rem">
@@ -715,7 +789,6 @@
             <input type="number" id="t4_nba" min="1" step="1" placeholder="e.g. 200">
           </div>
         </div>
-        <!-- RIGHT: A-negative -->
         <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:1.1rem;">
           <div class="section-label" style="margin-top:0">P(B|¬A) — A-negative group</div>
           <div class="form-group" style="margin-bottom:.75rem">
@@ -733,12 +806,12 @@
       <div class="error-box" id="t4_error"></div>
       <button class="btn btn-primary" id="t4_btn" onclick="calcTab4()">
         <span class="spinner" id="t4_spin"></span>
-        Run Bootstrap →
+        Run Simulation →
       </button>
     </div>
 
     <div class="results card" id="t4_results">
-      <div class="card-title">Results — Bootstrap Confidence Interval</div>
+      <div class="card-title">Results — Credible Interval &amp; Bootstrap CI [given P(B)]</div>
       <div class="result-grid">
         <div class="result-item">
           <div class="result-label">P(B|A) observed</div>
@@ -748,9 +821,9 @@
           <div class="result-label">P(B|¬A) observed</div>
           <div class="result-value" id="t4_r_pbna">—</div>
         </div>
-        <div class="result-item">
-          <div class="result-label">P(B) point estimate</div>
-          <div class="result-value" id="t4_r_pb">—</div>
+        <div class="result-item highlight-amber">
+          <div class="result-label">P(A) — Recovered prior</div>
+          <div class="result-value" id="t4_r_pa">—</div>
         </div>
         <div class="result-item highlight">
           <div class="result-label">P(A|B) point estimate</div>
@@ -760,14 +833,53 @@
           <div class="result-label">P(¬A|B) — point est.</div>
           <div class="result-value" id="t4_r_pnab">—</div>
         </div>
-        <div class="result-item highlight-cyan">
-          <div class="result-label">Bootstrap mean</div>
-          <div class="result-value" id="t4_r_mean">—</div>
+        <div class="result-item full" style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:10px; padding:.75rem 1rem; margin:.25rem 0;">
+          <div class="result-label" style="font-weight:700; color:#0369a1; margin-bottom:.5rem;">▸ Bayesian HPD Credible Interval (Beta-Binomial posterior)</div>
+          <div class="result-grid" style="margin:0; gap:.6rem;">
+            <div class="result-item highlight-cyan">
+              <div class="result-label">Posterior mean</div>
+              <div class="result-value" id="t4_cr_mean">—</div>
+            </div>
+            <div class="result-item highlight-amber">
+              <div class="result-label">Posterior median</div>
+              <div class="result-value" id="t4_cr_median">—</div>
+            </div>
+            <div class="result-item highlight-green full">
+              <div class="result-label">95% HPD Interval</div>
+              <div class="result-value" id="t4_cr_ci">—</div>
+              <div class="result-pct">The 95% HPD interval is the shortest interval containing 95% of the posterior probability mass.</div>
+            </div>
+            <div class="prob-bar-wrap result-item full">
+              <div class="prob-bar-label">Credible CI visualised (0 → 1)</div>
+              <div class="prob-bar-track" style="height:14px">
+                <div class="ci-bar-range" id="t4_cr_ci_range"></div>
+                <div class="ci-bar-point" id="t4_cr_ci_point"></div>
+              </div>
+              <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
+            </div>
+          </div>
         </div>
-        <div class="result-item highlight-green full">
-          <div class="result-label">95% Bootstrap CI</div>
-          <div class="result-value" id="t4_r_ci">—</div>
-          <div class="result-pct">95% of such intervals from repeated experiments would contain the true P(A|B).</div>
+        <div class="result-item full" style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:10px; padding:.75rem 1rem; margin:.25rem 0;">
+          <div class="result-label" style="font-weight:700; color:#15803d; margin-bottom:.5rem;">▸ Parametric Bootstrap CI (Frequentist)</div>
+          <div class="result-grid" style="margin:0; gap:.6rem;">
+            <div class="result-item highlight-cyan">
+              <div class="result-label">Bootstrap mean</div>
+              <div class="result-value" id="t4_bt_mean">—</div>
+            </div>
+            <div class="result-item highlight-green full">
+              <div class="result-label">95% Bootstrap CI</div>
+              <div class="result-value" id="t4_bt_ci">—</div>
+              <div class="result-pct">95% of such intervals from repeated experiments would contain the true P(A|B).</div>
+            </div>
+            <div class="prob-bar-wrap result-item full">
+              <div class="prob-bar-label">Bootstrap CI visualised (0 → 1)</div>
+              <div class="prob-bar-track" style="height:14px">
+                <div class="ci-bar-range" id="t4_bt_ci_range"></div>
+                <div class="ci-bar-point" id="t4_bt_ci_point"></div>
+              </div>
+              <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
+            </div>
+          </div>
         </div>
         <div class="result-item highlight-amber">
           <div class="result-label">P(A|¬B) — point est.</div>
@@ -780,14 +892,6 @@
         <div class="bayes-table-wrap">
           <div class="bayes-table-title">Bayesian Probability Table — Joint Probabilities P(row ∩ col) — point estimates</div>
           <div id="t4_bayes_table"></div>
-        </div>
-        <div class="prob-bar-wrap result-item">
-          <div class="prob-bar-label">CI visualised (0 → 1)</div>
-          <div class="prob-bar-track" style="height:14px">
-            <div class="ci-bar-range" id="t4_ci_range"></div>
-            <div class="ci-bar-point" id="t4_ci_point"></div>
-          </div>
-          <div class="ci-axis"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
         </div>
       </div>
       <button class="btn btn-save" onclick="saveTab4()">📥 Save Results as TXT</button>
@@ -927,6 +1031,18 @@ function percentile(sorted, p) {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
 }
 
+// Highest Posterior Density interval — shortest interval covering `coverage` of mass
+function hpd(sorted, coverage) {
+  const n = sorted.length;
+  const w = Math.floor(coverage * n);
+  let best = Infinity, lo = 0;
+  for (let i = 0; i + w < n; i++) {
+    const width = sorted[i + w] - sorted[i];
+    if (width < best) { best = width; lo = i; }
+  }
+  return [sorted[lo], sorted[lo + w]];
+}
+
 // ── CI bar helper ─────────────────────────────────────
 function drawCIbar(rangeId, pointId, lower, upper, point) {
   const range = document.getElementById(rangeId);
@@ -971,6 +1087,13 @@ function startSpinner(btnId, spinId) {
 function stopSpinner(btnId, spinId) {
   document.getElementById(btnId).disabled = false;
   document.getElementById(spinId).style.display = 'none';
+}
+
+// ── Input mode toggle (direct probability ↔ from counts) ─────
+function toggleMode(prefix) {
+  const mode = document.querySelector(`input[name="${prefix}_mode"]:checked`).value;
+  document.getElementById(`${prefix}_direct`).style.display = mode === 'direct' ? 'block' : 'none';
+  document.getElementById(`${prefix}_counts`).style.display = mode === 'counts'  ? 'grid'  : 'none';
 }
 
 // ════════════════════════════════════════════════════════
@@ -1064,7 +1187,7 @@ function calcTab2() {
 }
 
 // ════════════════════════════════════════════════════════
-// TAB 3 — Credible Interval
+// TAB 3 — Credible + Bootstrap CI given P(A)
 // ════════════════════════════════════════════════════════
 function calcTab3() {
   clearError('t3_error');
@@ -1073,63 +1196,89 @@ function calcTab3() {
 
   setTimeout(() => {
     try {
-      const pa   = getFloat('t3_pa');
-      const sba  = getInt('t3_sba');
-      const nba  = getInt('t3_nba');
-      const sbna = getInt('t3_sbna');
-      const nbna = getInt('t3_nbna');
-
-      if (pa < 0 || pa > 1) throw new Error('P(A) must be between 0 and 1.');
-      if (sba < 0 || nba <= 0 || sba > nba)   throw new Error('Invalid counts for P(B|A).');
-      if (sbna < 0 || nbna <= 0 || sbna > nbna) throw new Error('Invalid counts for P(B|¬A).');
-
-      const N     = 1000000;
-      const fba   = nba  - sba;
-      const fbna  = nbna - sbna;
-      const pnota = 1 - pa;
-      const posterior = new Float64Array(N);
-
-      for (let i = 0; i < N; i++) {
-        const p1 = randBeta(sba  + 1, fba  + 1);
-        const p2 = randBeta(sbna + 1, fbna + 1);
-        const pb_i = p1 * pa + p2 * pnota;
-        posterior[i] = pb_i > 0 ? (p1 * pa) / pb_i : NaN;
+      const paMode = document.querySelector('input[name="t3_pa_mode"]:checked').value;
+      let pa, spa = 0, npa = 0, pa_uncertain = false;
+      if (paMode === 'direct') {
+        pa = getFloat('t3_pa');
+        if (pa < 0 || pa > 1) throw new Error('P(A) must be between 0 and 1.');
+      } else {
+        spa = getInt('t3_spa'); npa = getInt('t3_npa');
+        if (spa < 0 || npa <= 0 || spa > npa) throw new Error('Invalid counts for P(A).');
+        pa = spa / npa;
+        pa_uncertain = true;
       }
 
-      const clean = Array.from(posterior).filter(v => !isNaN(v)).sort((a,b) => a-b);
-      const lo  = percentile(clean, 2.5);
-      const hi  = percentile(clean, 97.5);
-      const mn  = clean.reduce((s,v) => s+v, 0) / clean.length;
-      const med = percentile(clean, 50);
+      const sba  = getInt('t3_sba');  const nba  = getInt('t3_nba');
+      const sbna = getInt('t3_sbna'); const nbna = getInt('t3_nbna');
+      if (sba < 0 || nba <= 0 || sba > nba)    throw new Error('Invalid counts for P(B|A).');
+      if (sbna < 0 || nbna <= 0 || sbna > nbna) throw new Error('Invalid counts for P(B|\u00acA).');
 
-      // Point estimate
-      const pba_pt  = sba  / nba;
-      const pbna_pt = sbna / nbna;
-      const pb_pt   = pba_pt * pa + pbna_pt * pnota;
-      const pt      = pb_pt > 0 ? (pba_pt * pa) / pb_pt : NaN;
+      const pba_pt   = sba  / nba;
+      const pbna_pt  = sbna / nbna;
+      const pnota    = 1 - pa;
+      const pb_pt    = pba_pt * pa + pbna_pt * pnota;
+      if (pb_pt <= 0) throw new Error('P(B) point estimate must be > 0.');
+      const pt       = (pba_pt * pa) / pb_pt;
+      const pnotb_pt = 1 - pb_pt;
+      const panb_pt  = pnotb_pt > 0 ? ((1 - pba_pt) * pa) / pnotb_pt : 0;
+      const pnanb_pt = 1 - panb_pt;
+      const pAB_pt   = pba_pt  * pa;
+      const pAnB_pt  = (1 - pba_pt)  * pa;
+      const pnAB_pt  = pbna_pt * pnota;
+      const pnAnB_pt = (1 - pbna_pt) * pnota;
 
-      const pnotb_pt  = 1 - pb_pt;
-      const panb_pt   = pnotb_pt > 0 ? ((1 - pba_pt) * pa) / pnotb_pt : 0;
-      const pnanb_pt  = 1 - panb_pt;
-      const pAB_pt    = pba_pt  * pa;
-      const pAnB_pt   = (1 - pba_pt)  * pa;
-      const pnAB_pt   = pbna_pt * pnota;
-      const pnAnB_pt  = (1 - pbna_pt) * pnota;
+      const N    = 1000000;
+      const fba  = nba  - sba;
+      const fbna = nbna - sbna;
+      const fpa  = npa  - spa;
+      const posterior = new Float64Array(N);
+      const boot      = new Float64Array(N);
 
-      document.getElementById('t3_r_pba').textContent     = fmt6(pba_pt);
-      document.getElementById('t3_r_pbna').textContent    = fmt6(pbna_pt);
-      document.getElementById('t3_r_pb').textContent      = fmt6(pb_pt);
-      document.getElementById('t3_r_pt').textContent      = fmt6(pt);
-      document.getElementById('t3_r_pnab').textContent    = fmt6(1 - pt);
-      document.getElementById('t3_r_mean').textContent    = fmt6(mn);
-      document.getElementById('t3_r_median').textContent  = fmt6(med);
-      document.getElementById('t3_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
-      document.getElementById('t3_r_panb').textContent    = fmt6(panb_pt);
-      document.getElementById('t3_r_pnanb').textContent   = fmt6(pnanb_pt);
+      for (let i = 0; i < N; i++) {
+        // Credible: Beta samples
+        const pa_c = pa_uncertain ? randBeta(spa + 1, fpa + 1) : pa;
+        const p1_c = randBeta(sba  + 1, fba  + 1);
+        const p2_c = randBeta(sbna + 1, fbna + 1);
+        const pb_c = p1_c * pa_c + p2_c * (1 - pa_c);
+        posterior[i] = pb_c > 0 ? (p1_c * pa_c) / pb_c : NaN;
+
+        // Bootstrap: Binomial resamples
+        const pa_b = pa_uncertain ? randBinomial(npa, pa) / npa : pa;
+        const p1_b = randBinomial(nba,  pba_pt) / nba;
+        const p2_b = randBinomial(nbna, pbna_pt) / nbna;
+        const pb_b = p1_b * pa_b + p2_b * (1 - pa_b);
+        boot[i]    = pb_b > 0 ? (p1_b * pa_b) / pb_b : NaN;
+      }
+
+      const cleanC  = Array.from(posterior).filter(v => !isNaN(v)).sort((a,b) => a-b);
+      if (cleanC.length < 100) throw new Error('Too few valid simulation draws. Check your inputs.');
+      const [cr_lo, cr_hi] = hpd(cleanC, 0.95);
+      const cr_mn  = cleanC.reduce((s,v) => s+v, 0) / cleanC.length;
+      const cr_med = percentile(cleanC, 50);
+
+      const cleanB = Array.from(boot).filter(v => !isNaN(v)).sort((a,b) => a-b);
+      if (cleanB.length < 100) throw new Error('Too few valid bootstrap replicates. Check your inputs.');
+      const bt_lo  = percentile(cleanB, 2.5);
+      const bt_hi  = percentile(cleanB, 97.5);
+      const bt_mn  = cleanB.reduce((s,v) => s+v, 0) / cleanB.length;
+
+      document.getElementById('t3_r_pba').textContent    = fmt6(pba_pt);
+      document.getElementById('t3_r_pbna').textContent   = fmt6(pbna_pt);
+      document.getElementById('t3_r_pb').textContent     = fmt6(pb_pt);
+      document.getElementById('t3_r_pt').textContent     = fmt6(pt);
+      document.getElementById('t3_r_pnab').textContent   = fmt6(1 - pt);
+      document.getElementById('t3_cr_mean').textContent  = fmt6(cr_mn);
+      document.getElementById('t3_cr_median').textContent= fmt6(cr_med);
+      document.getElementById('t3_cr_ci').textContent    = `[ ${fmt6(cr_lo)}  ,  ${fmt6(cr_hi)} ]`;
+      document.getElementById('t3_bt_mean').textContent  = fmt6(bt_mn);
+      document.getElementById('t3_bt_ci').textContent    = `[ ${fmt6(bt_lo)}  ,  ${fmt6(bt_hi)} ]`;
+      document.getElementById('t3_r_panb').textContent   = fmt6(panb_pt);
+      document.getElementById('t3_r_pnanb').textContent  = fmt6(pnanb_pt);
       document.getElementById('t3_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
-      _t3cache = { pba_pt, pbna_pt, pb_pt, pt, pnab_pt: 1 - pt, mn, med, lo, hi, panb_pt, pnanb_pt,
-                   pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
-      drawCIbar('t3_ci_range', 't3_ci_point', lo, hi, pt);
+      _t3cache = { pba_pt, pbna_pt, pb_pt, pt, pnab_pt: 1-pt, cr_mn, cr_med, cr_lo, cr_hi,
+                   bt_mn, bt_lo, bt_hi, panb_pt, pnanb_pt, pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
+      drawCIbar('t3_cr_ci_range', 't3_cr_ci_point', cr_lo, cr_hi, pt);
+      drawCIbar('t3_bt_ci_range', 't3_bt_ci_point', bt_lo, bt_hi, pt);
       showResults('t3_results');
     } catch(e) {
       showError('t3_error', e.message);
@@ -1140,7 +1289,7 @@ function calcTab3() {
 }
 
 // ════════════════════════════════════════════════════════
-// TAB 4 — Bootstrap CI
+// TAB 4 — Credible + Bootstrap CI given P(B)
 // ════════════════════════════════════════════════════════
 function calcTab4() {
   clearError('t4_error');
@@ -1149,60 +1298,101 @@ function calcTab4() {
 
   setTimeout(() => {
     try {
-      const pa   = getFloat('t4_pa');
-      const sba  = getInt('t4_sba');
-      const nba  = getInt('t4_nba');
-      const sbna = getInt('t4_sbna');
-      const nbna = getInt('t4_nbna');
-
-      if (pa < 0 || pa > 1) throw new Error('P(A) must be between 0 and 1.');
-      if (sba < 0 || nba <= 0 || sba > nba)   throw new Error('Invalid counts for P(B|A).');
-      if (sbna < 0 || nbna <= 0 || sbna > nbna) throw new Error('Invalid counts for P(B|¬A).');
-
-      const N      = 1000000;
-      const pba_h  = sba  / nba;
-      const pbna_h = sbna / nbna;
-      const pnota  = 1 - pa;
-      const boot   = new Float64Array(N);
-
-      for (let i = 0; i < N; i++) {
-        const bs1   = randBinomial(nba,  pba_h);
-        const bs2   = randBinomial(nbna, pbna_h);
-        const p1    = bs1 / nba;
-        const p2    = bs2 / nbna;
-        const pb_i  = p1 * pa + p2 * pnota;
-        boot[i] = pb_i > 0 ? (p1 * pa) / pb_i : NaN;
+      const pbMode = document.querySelector('input[name="t4_pb_mode"]:checked').value;
+      let pb, spb = 0, npb = 0, pb_uncertain = false;
+      if (pbMode === 'direct') {
+        pb = getFloat('t4_pb');
+        if (pb <= 0 || pb > 1) throw new Error('P(B) must be between 0 (exclusive) and 1.');
+      } else {
+        spb = getInt('t4_spb'); npb = getInt('t4_npb');
+        if (spb < 0 || npb <= 0 || spb > npb) throw new Error('Invalid counts for P(B).');
+        pb = spb / npb;
+        if (pb <= 0) throw new Error('P(B) from counts must be > 0.');
+        pb_uncertain = true;
       }
 
-      const clean = Array.from(boot).filter(v => !isNaN(v)).sort((a,b) => a-b);
-      const lo  = percentile(clean, 2.5);
-      const hi  = percentile(clean, 97.5);
-      const mn  = clean.reduce((s,v) => s+v, 0) / clean.length;
+      const sba  = getInt('t4_sba');  const nba  = getInt('t4_nba');
+      const sbna = getInt('t4_sbna'); const nbna = getInt('t4_nbna');
+      if (sba < 0 || nba <= 0 || sba > nba)    throw new Error('Invalid counts for P(B|A).');
+      if (sbna < 0 || nbna <= 0 || sbna > nbna) throw new Error('Invalid counts for P(B|\u00acA).');
 
-      const pb_pt = pba_h * pa + pbna_h * pnota;
-      const pt    = pb_pt > 0 ? (pba_h * pa) / pb_pt : NaN;
+      const pba_pt   = sba  / nba;
+      const pbna_pt  = sbna / nbna;
+      const denom_pt = pba_pt - pbna_pt;
+      if (Math.abs(denom_pt) < 1e-12) throw new Error('P(B|A) must differ from P(B|\u00acA).');
+      const pa_pt = (pb - pbna_pt) / denom_pt;
+      if (pa_pt < 0 || pa_pt > 1) throw new Error('Recovered P(A) is outside [0,1]. Check your inputs.');
 
-      const pnotb_pt  = 1 - pb_pt;
-      const panb_pt   = pnotb_pt > 0 ? ((1 - pba_h) * pa) / pnotb_pt : 0;
-      const pnanb_pt  = 1 - panb_pt;
-      const pAB_pt    = pba_h  * pa;
-      const pAnB_pt   = (1 - pba_h)  * pa;
-      const pnAB_pt   = pbna_h * pnota;
-      const pnAnB_pt  = (1 - pbna_h) * pnota;
+      const N    = 1000000;
+      const fba  = nba  - sba;
+      const fbna = nbna - sbna;
+      const fpb  = npb  - spb;
+      const posterior = new Float64Array(N);
+      const boot      = new Float64Array(N);
 
-      document.getElementById('t4_r_pba').textContent     = fmt6(pba_h);
-      document.getElementById('t4_r_pbna').textContent    = fmt6(pbna_h);
-      document.getElementById('t4_r_pb').textContent      = fmt6(pb_pt);
-      document.getElementById('t4_r_pt').textContent      = fmt6(pt);
-      document.getElementById('t4_r_pnab').textContent    = fmt6(1 - pt);
-      document.getElementById('t4_r_mean').textContent    = fmt6(mn);
-      document.getElementById('t4_r_ci').textContent      = `[ ${fmt6(lo)}  ,  ${fmt6(hi)} ]`;
-      document.getElementById('t4_r_panb').textContent    = fmt6(panb_pt);
-      document.getElementById('t4_r_pnanb').textContent   = fmt6(pnanb_pt);
-      document.getElementById('t4_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pb_pt, pnotb_pt);
-      _t4cache = { pba_h, pbna_h, pb_pt, pt, pnab_pt: 1 - pt, mn, lo, hi, panb_pt, pnanb_pt,
-                   pAB_pt, pAnB_pt, pa, pnAB_pt, pnAnB_pt, pnota, pnotb_pt };
-      drawCIbar('t4_ci_range', 't4_ci_point', lo, hi, pt);
+      for (let i = 0; i < N; i++) {
+        // Credible: Beta samples
+        const pb_c = pb_uncertain ? randBeta(spb + 1, fpb + 1) : pb;
+        const p1_c = randBeta(sba  + 1, fba  + 1);
+        const p2_c = randBeta(sbna + 1, fbna + 1);
+        const dC   = p1_c - p2_c;
+        if (Math.abs(dC) < 1e-15 || pb_c <= 0) { posterior[i] = NaN; }
+        else {
+          const pa_c = (pb_c - p2_c) / dC;
+          posterior[i] = (pa_c < 0 || pa_c > 1) ? NaN : (p1_c * pa_c) / pb_c;
+        }
+
+        // Bootstrap: Binomial resamples
+        const pb_b = pb_uncertain ? randBinomial(npb, pb) / npb : pb;
+        const p1_b = randBinomial(nba,  pba_pt) / nba;
+        const p2_b = randBinomial(nbna, pbna_pt) / nbna;
+        const dB   = p1_b - p2_b;
+        if (Math.abs(dB) < 1e-15 || pb_b <= 0) { boot[i] = NaN; }
+        else {
+          const pa_b = (pb_b - p2_b) / dB;
+          boot[i] = (pa_b < 0 || pa_b > 1) ? NaN : (p1_b * pa_b) / pb_b;
+        }
+      }
+
+      const cleanC  = Array.from(posterior).filter(v => !isNaN(v)).sort((a,b) => a-b);
+      if (cleanC.length < 100) throw new Error('Too few valid simulation draws. Check your inputs.');
+      const [cr_lo, cr_hi] = hpd(cleanC, 0.95);
+      const cr_mn  = cleanC.reduce((s,v) => s+v, 0) / cleanC.length;
+      const cr_med = percentile(cleanC, 50);
+
+      const cleanB = Array.from(boot).filter(v => !isNaN(v)).sort((a,b) => a-b);
+      if (cleanB.length < 100) throw new Error('Too few valid bootstrap replicates. Check your inputs.');
+      const bt_lo  = percentile(cleanB, 2.5);
+      const bt_hi  = percentile(cleanB, 97.5);
+      const bt_mn  = cleanB.reduce((s,v) => s+v, 0) / cleanB.length;
+
+      const pt       = (pba_pt * pa_pt) / pb;
+      const pnota_pt = 1 - pa_pt;
+      const pnotb_pt = 1 - pb;
+      const panb_pt  = pnotb_pt > 0 ? ((1 - pba_pt) * pa_pt) / pnotb_pt : 0;
+      const pnanb_pt = 1 - panb_pt;
+      const pAB_pt   = pba_pt  * pa_pt;
+      const pAnB_pt  = (1 - pba_pt)  * pa_pt;
+      const pnAB_pt  = pbna_pt * pnota_pt;
+      const pnAnB_pt = (1 - pbna_pt) * pnota_pt;
+
+      document.getElementById('t4_r_pba').textContent    = fmt6(pba_pt);
+      document.getElementById('t4_r_pbna').textContent   = fmt6(pbna_pt);
+      document.getElementById('t4_r_pa').textContent     = fmt6(pa_pt);
+      document.getElementById('t4_r_pt').textContent     = fmt6(pt);
+      document.getElementById('t4_r_pnab').textContent   = fmt6(1 - pt);
+      document.getElementById('t4_cr_mean').textContent  = fmt6(cr_mn);
+      document.getElementById('t4_cr_median').textContent= fmt6(cr_med);
+      document.getElementById('t4_cr_ci').textContent    = `[ ${fmt6(cr_lo)}  ,  ${fmt6(cr_hi)} ]`;
+      document.getElementById('t4_bt_mean').textContent  = fmt6(bt_mn);
+      document.getElementById('t4_bt_ci').textContent    = `[ ${fmt6(bt_lo)}  ,  ${fmt6(bt_hi)} ]`;
+      document.getElementById('t4_r_panb').textContent   = fmt6(panb_pt);
+      document.getElementById('t4_r_pnanb').textContent  = fmt6(pnanb_pt);
+      document.getElementById('t4_bayes_table').innerHTML = buildBayesTable(pAB_pt, pAnB_pt, pa_pt, pnAB_pt, pnAnB_pt, pnota_pt, pb, pnotb_pt);
+      _t4cache = { pba_pt, pbna_pt, pa_pt, pb, pt, pnab_pt: 1-pt, cr_mn, cr_med, cr_lo, cr_hi,
+                   bt_mn, bt_lo, bt_hi, panb_pt, pnanb_pt, pAB_pt, pAnB_pt, pnAB_pt, pnAnB_pt, pnota_pt, pnotb_pt };
+      drawCIbar('t4_cr_ci_range', 't4_cr_ci_point', cr_lo, cr_hi, pt);
+      drawCIbar('t4_bt_ci_range', 't4_bt_ci_point', bt_lo, bt_hi, pt);
       showResults('t4_results');
     } catch(e) {
       showError('t4_error', e.message);
@@ -1216,7 +1406,7 @@ function calcTab4() {
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const activeTab = [...document.querySelectorAll('.tab-panel')].findIndex(p => p.classList.contains('active'));
-  [calcTab1, calcTab2, calcTab3, calcTab4][activeTab]();
+  [calcTab1, calcTab2, calcTab3, calcTab4][activeTab]?.();;
 });
 
 // ════════════════════════════════════════════════════════
@@ -1266,6 +1456,9 @@ function saveTab1() {
   const pnAnB = (pnanb * pnb).toFixed(6);
   const pA    = (parseFloat(pAB) + parseFloat(pAnB)).toFixed(6);
   const pnA   = (parseFloat(pnAB)+ parseFloat(pnAnB)).toFixed(6);
+  const pa_in   = document.getElementById('t1_pa').value;
+  const pba_in  = document.getElementById('t1_pba').value;
+  const pbna_in = document.getElementById('t1_pbna').value;
 
   const txt = [
     HR,
@@ -1273,6 +1466,12 @@ function saveTab1() {
     "  Method 1 — Given P(A)",
     "  Generated: " + now(),
     HR, '',
+    '  Input Values',
+    hr,
+    fmtMetric('P(A)  — Prior',  pa_in),
+    fmtMetric('P(B|A)',          pba_in),
+    fmtMetric('P(B|not-A)',      pbna_in),
+    '',
     pad('Metric', 28) + pad('Value', 14) + 'Percentage',
     hr,
     fmtMetric('P(B)  — Marginal',     g('t1_r_pb'),    ''),
@@ -1306,6 +1505,9 @@ function saveTab2() {
   const pnA   = (1 - pa).toFixed(6);
   const pnAB  = (pnab  * pb).toFixed(6);
   const pnAnB = (pnanb * pnb).toFixed(6);
+  const pb_in   = document.getElementById('t2_pb').value;
+  const pba_in  = document.getElementById('t2_pba').value;
+  const pbna_in = document.getElementById('t2_pbna').value;
 
   const txt = [
     HR,
@@ -1313,6 +1515,12 @@ function saveTab2() {
     "  Method 2 — Given P(B)",
     "  Generated: " + now(),
     HR, '',
+    '  Input Values',
+    hr,
+    fmtMetric('P(B)  — Given', pb_in),
+    fmtMetric('P(B|A)',         pba_in),
+    fmtMetric('P(B|not-A)',     pbna_in),
+    '',
     pad('Metric', 28) + pad('Value', 14) + 'Percentage',
     hr,
     fmtMetric('P(A)  — Recovered prior', g('t2_r_pa'),    ''),
@@ -1332,12 +1540,24 @@ function saveTab2() {
 function saveTab3() {
   const c = _t3cache;
   if (!c) return;
+  const paMode3 = document.querySelector('input[name="t3_pa_mode"]:checked').value;
+  const paIn3   = paMode3 === 'direct'
+    ? `${document.getElementById('t3_pa').value}  (direct)`
+    : `${document.getElementById('t3_spa').value} / ${document.getElementById('t3_npa').value}  (counts)`;
+  const pbaIn3  = `${document.getElementById('t3_sba').value} / ${document.getElementById('t3_nba').value}`;
+  const pbnaIn3 = `${document.getElementById('t3_sbna').value} / ${document.getElementById('t3_nbna').value}`;
   const txt = [
     HR,
     "  Eric's Bayes Theorem Calculator",
-    "  Method 3 — Bayesian Credible Interval (Beta-Binomial, 1,000,000 draws)",
+    "  Method 3 \u2014 Credible Interval + Bootstrap CI [given P(A)], 1,000,000 draws",
     "  Generated: " + now(),
     HR, '',
+    '  Input Values',
+    hr,
+    fmtMetric('P(A)  \u2014 Prior',       paIn3),
+    fmtMetric('P(B|A)  \u2014 s/n',       pbaIn3),
+    fmtMetric('P(B|not-A)  \u2014 s/n',   pbnaIn3),
+    '',
     pad('Metric', 28) + 'Value',
     hr,
     fmtMetric('P(B|A) observed',       fmt6(c.pba_pt)),
@@ -1345,52 +1565,85 @@ function saveTab3() {
     fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
     fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
     fmtMetric('P(not-A|B) pt. est.',   fmt6(c.pnab_pt)),
-    fmtMetric('Posterior mean',        fmt6(c.mn)),
-    fmtMetric('Posterior median',      fmt6(c.med)),
-    fmtMetric('95% Credible Interval', `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
+    '', hr,
+    '  Bayesian HPD Credible Interval (Beta-Binomial posterior)',
+    hr,
+    fmtMetric('Posterior mean',        fmt6(c.cr_mn)),
+    fmtMetric('Posterior median',      fmt6(c.cr_med)),
+    fmtMetric('95% HPD Interval',      `[ ${fmt6(c.cr_lo)}  ,  ${fmt6(c.cr_hi)} ]`),
+    '', hr,
+    '  Parametric Bootstrap CI (Frequentist)',
+    hr,
+    fmtMetric('Bootstrap mean',        fmt6(c.bt_mn)),
+    fmtMetric('95% Bootstrap CI',      `[ ${fmt6(c.bt_lo)}  ,  ${fmt6(c.bt_hi)} ]`),
+    '', hr,
     fmtMetric('P(A|not-B) pt. est.',   fmt6(c.panb_pt)),
     fmtMetric('P(not-A|not-B) pt. est.',fmt6(c.pnanb_pt)),
     '', hr,
-    '  Bayesian Probability Table — Joint Probabilities P(row AND col) — Point Estimates',
+    '  Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates',
     hr,
     fmtJointTable(fmt6(c.pAB_pt), fmt6(c.pAnB_pt), fmt6(c.pa),
                   fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota),
                   fmt6(c.pb_pt), fmt6(c.pnotb_pt)),
     '', HR
   ].join('\r\n');
-  downloadTXT('BayesT_Method3_CredibleInterval_Results.txt', txt);
+  downloadTXT('BayesT_Method3_CI_PA_Results.txt', txt);
 }
 
 function saveTab4() {
   const c = _t4cache;
   if (!c) return;
+  const pbMode4 = document.querySelector('input[name="t4_pb_mode"]:checked').value;
+  const pbIn4   = pbMode4 === 'direct'
+    ? `${document.getElementById('t4_pb').value}  (direct)`
+    : `${document.getElementById('t4_spb').value} / ${document.getElementById('t4_npb').value}  (counts)`;
+  const pbaIn4  = `${document.getElementById('t4_sba').value} / ${document.getElementById('t4_nba').value}`;
+  const pbnaIn4 = `${document.getElementById('t4_sbna').value} / ${document.getElementById('t4_nbna').value}`;
   const txt = [
     HR,
     "  Eric's Bayes Theorem Calculator",
-    "  Method 4 — Bootstrap Confidence Interval (Parametric, 1,000,000 replicates)",
+    "  Method 4 \u2014 Credible Interval + Bootstrap CI [given P(B)], 1,000,000 draws",
     "  Generated: " + now(),
     HR, '',
+    '  Input Values',
+    hr,
+    fmtMetric('P(B)  \u2014 Given',       pbIn4),
+    fmtMetric('P(B|A)  \u2014 s/n',       pbaIn4),
+    fmtMetric('P(B|not-A)  \u2014 s/n',   pbnaIn4),
+    '',
     pad('Metric', 28) + 'Value',
     hr,
-    fmtMetric('P(B|A) observed',       fmt6(c.pba_h)),
-    fmtMetric('P(B|not-A) observed',   fmt6(c.pbna_h)),
-    fmtMetric('P(B) point estimate',   fmt6(c.pb_pt)),
-    fmtMetric('P(A|B) point estimate', fmt6(c.pt)),
-    fmtMetric('P(not-A|B) pt. est.',   fmt6(c.pnab_pt)),
-    fmtMetric('Bootstrap mean',        fmt6(c.mn)),
-    fmtMetric('95% Bootstrap CI',      `[ ${fmt6(c.lo)}  ,  ${fmt6(c.hi)} ]`),
-    fmtMetric('P(A|not-B) pt. est.',   fmt6(c.panb_pt)),
+    fmtMetric('P(B|A) observed',        fmt6(c.pba_pt)),
+    fmtMetric('P(B|not-A) observed',    fmt6(c.pbna_pt)),
+    fmtMetric('P(A) recovered',         fmt6(c.pa_pt)),
+    fmtMetric('P(B) given',             fmt6(c.pb)),
+    fmtMetric('P(A|B) point estimate',  fmt6(c.pt)),
+    fmtMetric('P(not-A|B) pt. est.',    fmt6(c.pnab_pt)),
+    '', hr,
+    '  Bayesian HPD Credible Interval (Beta-Binomial posterior)',
+    hr,
+    fmtMetric('Posterior mean',         fmt6(c.cr_mn)),
+    fmtMetric('Posterior median',       fmt6(c.cr_med)),
+    fmtMetric('95% HPD Interval',       `[ ${fmt6(c.cr_lo)}  ,  ${fmt6(c.cr_hi)} ]`),
+    '', hr,
+    '  Parametric Bootstrap CI (Frequentist)',
+    hr,
+    fmtMetric('Bootstrap mean',         fmt6(c.bt_mn)),
+    fmtMetric('95% Bootstrap CI',       `[ ${fmt6(c.bt_lo)}  ,  ${fmt6(c.bt_hi)} ]`),
+    '', hr,
+    fmtMetric('P(A|not-B) pt. est.',    fmt6(c.panb_pt)),
     fmtMetric('P(not-A|not-B) pt. est.',fmt6(c.pnanb_pt)),
     '', hr,
-    '  Bayesian Probability Table — Joint Probabilities P(row AND col) — Point Estimates',
+    '  Bayesian Probability Table \u2014 Joint Probabilities P(row AND col) \u2014 Point Estimates',
     hr,
-    fmtJointTable(fmt6(c.pAB_pt), fmt6(c.pAnB_pt), fmt6(c.pa),
-                  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota),
-                  fmt6(c.pb_pt), fmt6(c.pnotb_pt)),
+    fmtJointTable(fmt6(c.pAB_pt), fmt6(c.pAnB_pt), fmt6(c.pa_pt),
+                  fmt6(c.pnAB_pt), fmt6(c.pnAnB_pt), fmt6(c.pnota_pt),
+                  fmt6(c.pb), fmt6(c.pnotb_pt)),
     '', HR
   ].join('\r\n');
-  downloadTXT('BayesT_Method4_BootstrapCI_Results.txt', txt);
+  downloadTXT('BayesT_Method4_CI_PB_Results.txt', txt);
 }
+
 </script>
 </body>
 </html>
