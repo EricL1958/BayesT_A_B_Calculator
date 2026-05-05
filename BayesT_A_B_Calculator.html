@@ -1012,6 +1012,13 @@ function randPoisson(lambda) {
   return Math.max(0, Math.round(lambda + Math.sqrt(lambda) * randNorm()));
 }
 
+// Jeffreys prior correction: only applied at boundary counts (s=0 or s=n) to prevent
+// randBinomial(n, 0) collapsing to all-zeros, which would produce a degenerate CI.
+// Point estimates always use raw s/n.
+function jeffreysP(s, n) {
+  return (s === 0 || s === n) ? (s + 0.5) / (n + 1) : s / n;
+}
+
 // Binomial(n, p) — exact for small n, Poisson approx when mu<30, normal otherwise.
 // Using Poisson for small expected counts avoids the normal approximation placing
 // excess probability at 0, which would incorrectly inflate the upper CI to 1.0.
@@ -1253,10 +1260,11 @@ function calcTab3() {
         const pb_c = p1_c * pa_c + p2_c * (1 - pa_c);
         posterior[i] = pb_c > 0 ? (p1_c * pa_c) / pb_c : NaN;
 
-        // Bootstrap: Binomial resamples
+        // Bootstrap: Binomial resamples — use jeffreysP for hats to avoid
+        // randBinomial(n, 0) collapsing to a degenerate CI at boundary counts.
         const pa_b = pa_uncertain ? randBinomial(npa, pa) / npa : pa;
-        const p1_b = randBinomial(nba,  pba_pt) / nba;
-        const p2_b = randBinomial(nbna, pbna_pt) / nbna;
+        const p1_b = randBinomial(nba,  jeffreysP(sba,  nba))  / nba;
+        const p2_b = randBinomial(nbna, jeffreysP(sbna, nbna)) / nbna;
         const pb_b = p1_b * pa_b + p2_b * (1 - pa_b);
         boot[i]    = pb_b > 0 ? (p1_b * pa_b) / pb_b : NaN;
       }
@@ -1353,10 +1361,11 @@ function calcTab4() {
           posterior[i] = (pa_c < 0 || pa_c > 1) ? NaN : (p1_c * pa_c) / pb_c;
         }
 
-        // Bootstrap: Binomial resamples
+        // Bootstrap: Binomial resamples — use jeffreysP for hats to avoid
+        // randBinomial(n, 0) collapsing to a degenerate CI at boundary counts.
         const pb_b = pb_uncertain ? randBinomial(npb, pb) / npb : pb;
-        const p1_b = randBinomial(nba,  pba_pt) / nba;
-        const p2_b = randBinomial(nbna, pbna_pt) / nbna;
+        const p1_b = randBinomial(nba,  jeffreysP(sba,  nba))  / nba;
+        const p2_b = randBinomial(nbna, jeffreysP(sbna, nbna)) / nbna;
         const dB   = p1_b - p2_b;
         if (Math.abs(dB) < 1e-15 || pb_b <= 0) { boot[i] = NaN; }
         else {
